@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import type { ProjectIdea, OfficialProject, AIAnalysisResult } from '../types';
 import { analyzeSubmissions } from '../services/geminiService';
 import { ProjectCard } from './ProjectCard';
-import { MapPinIcon, FaceSmileIcon, ChartBarIcon, FilterIcon, DocumentTextIcon } from './icons';
+import { MapPinIcon, FaceSmileIcon, ChartBarIcon, FilterIcon, ClipboardDocumentListIcon, SearchIcon } from './icons';
 import { HOMA_BAY_LOCATIONS } from '../constants';
 
 interface DashboardProps {
@@ -15,11 +15,27 @@ interface DashboardProps {
 const PRIORITY_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 const SENTIMENT_COLORS = ['#00C49F', '#FFBB28', '#FF8042']; // Green, Yellow, Red
 
+const calculateCompletionPercentage = (project: OfficialProject) => {
+    const start = new Date(project.timeline.start).getTime();
+    const end = new Date(project.timeline.end).getTime();
+    const now = new Date().getTime();
+
+    if (project.status === 'Completed') return 100;
+    if (project.status === 'Not Started' || now < start) return 0;
+    if (now > end) return 100; // Should be completed but might be stalled
+
+    const totalDuration = end - start;
+    const elapsed = now - start;
+    return Math.min(100, Math.round((elapsed / totalDuration) * 100));
+};
+
+
 export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProjects, onSelectProject }) => {
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedSubCounty, setSelectedSubCounty] = useState('all');
   const [selectedWard, setSelectedWard] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const availableWards = useMemo(() => {
     if (selectedSubCounty === 'all' || !HOMA_BAY_LOCATIONS[selectedSubCounty as keyof typeof HOMA_BAY_LOCATIONS]) {
@@ -37,13 +53,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProj
   }, [projectIdeas, selectedSubCounty, selectedWard]);
 
   const filteredProjects = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
     return officialProjects.filter(project => {
+      // Location filter
+      const subCountyMatch = selectedSubCounty === 'all' || project.subCounty === selectedSubCounty;
+      const wardMatch = selectedWard === 'all' || project.ward === selectedWard;
+      const locationMatch = project.location === 'County-wide' || (subCountyMatch && wardMatch);
+      
+      // Search filter
+      const searchMatch = query === '' ||
+                          project.name.toLowerCase().includes(query) ||
+                          project.description.toLowerCase().includes(query);
+
+      return locationMatch && searchMatch;
+    });
+  }, [officialProjects, selectedSubCounty, selectedWard, searchQuery]);
+  
+  const ongoingProjects = useMemo(() => {
+    // Note: ongoingProjects should also respect the search query if desired,
+    // but for now, we'll keep it tied to just location filters to spotlight all ongoing work in an area.
+     return officialProjects.filter(project => {
+      if (project.status !== 'In Progress') return false;
       if (project.location === 'County-wide') return true;
       const subCountyMatch = selectedSubCounty === 'all' || project.subCounty === selectedSubCounty;
       const wardMatch = selectedWard === 'all' || project.ward === selectedWard;
       return subCountyMatch && wardMatch;
     });
   }, [officialProjects, selectedSubCounty, selectedWard]);
+
 
   useEffect(() => {
     const performAnalysis = async () => {
@@ -136,18 +173,44 @@ export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProj
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
-                      <div className="mt-8 border-t pt-6">
+                       <div className="mt-8 border-t pt-6">
                           <h3 className="font-bold text-lg mb-4 flex items-center">
-                              <DocumentTextIcon className="h-6 w-6 mr-2 text-green-600"/>
-                              Recent Submissions
+                              <ClipboardDocumentListIcon className="h-6 w-6 mr-2 text-green-600"/>
+                              Ongoing Project Spotlight
                           </h3>
-                          <div className="space-y-3">
-                              {filteredIdeas.slice(0, 5).map(idea => (
-                                  <div key={idea.id} className="text-sm p-3 bg-gray-50 rounded-md border">
-                                      <p className="font-semibold text-gray-800">{idea.title}</p>
-                                      <p className="text-gray-500">{idea.location} - <span className="capitalize text-xs font-medium bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">{idea.submittedVia}</span></p>
+                          <div className="space-y-4">
+                              {ongoingProjects.length > 0 ? (
+                                  ongoingProjects.map(project => {
+                                      const percentage = calculateCompletionPercentage(project);
+                                      return (
+                                          <div 
+                                              key={project.id} 
+                                              onClick={() => onSelectProject(project.id)}
+                                              className="p-3 bg-gray-50 rounded-md border hover:bg-gray-100 hover:shadow-sm cursor-pointer transition-all"
+                                          >
+                                              <div className="flex justify-between items-center flex-wrap gap-2">
+                                                  <div>
+                                                      <p className="font-semibold text-gray-800">{project.name}</p>
+                                                      <p className="text-sm text-gray-500">{project.location}</p>
+                                                  </div>
+                                                  <div className="text-right">
+                                                      <p className="text-xs text-gray-500">Ends: {new Date(project.timeline.end).toLocaleDateString()}</p>
+                                                  </div>
+                                              </div>
+                                              <div className="mt-2 flex items-center gap-3">
+                                                  <div className="w-full bg-gray-200 rounded-full h-2">
+                                                      <div className="bg-green-600 h-2 rounded-full" style={{ width: `${percentage}%` }}></div>
+                                                  </div>
+                                                  <span className="text-sm font-bold text-green-600">{percentage}%</span>
+                                              </div>
+                                          </div>
+                                      );
+                                  })
+                              ) : (
+                                  <div className="text-sm text-center text-gray-500 p-4 bg-gray-50 rounded-md">
+                                      No projects are currently in progress for the selected location.
                                   </div>
-                              ))}
+                              )}
                           </div>
                       </div>
                     </div>
@@ -198,6 +261,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProj
           <MapPinIcon className="h-6 w-6 mr-2 text-green-600" />
           Funded & Official Projects
         </h2>
+
+        <div className="mb-6 relative">
+            <input
+                type="text"
+                placeholder="Search projects by name or keyword..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition"
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <SearchIcon className="h-5 w-5 text-gray-400" />
+            </div>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map(project => (
             <ProjectCard key={project.id} project={project} onSelectProject={onSelectProject} />
@@ -205,8 +282,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProj
         </div>
           {filteredProjects.length === 0 && (
               <div className="md:col-span-2 lg:col-span-3 bg-white p-8 rounded-lg shadow-md text-center">
-                <h3 className="text-lg font-semibold text-gray-700">No official projects match the selected location.</h3>
-                <p className="text-gray-500 mt-2">Adjust the filters to see projects in other areas.</p>
+                <h3 className="text-lg font-semibold text-gray-700">No official projects match your search or filter criteria.</h3>
+                <p className="text-gray-500 mt-2">Try adjusting the filters or clearing the search.</p>
               </div>
           )}
       </div>

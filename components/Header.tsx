@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { View } from '../types';
 import { GovIcon } from './icons';
@@ -8,7 +7,14 @@ interface HeaderProps {
   setView: (view: View) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ setView }) => {
+export const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
+  const navItemClasses = (view: View) => 
+    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+      currentView === view 
+      ? 'bg-green-100 text-green-800' 
+      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+    }`;
+
   return (
     <header className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,12 +26,18 @@ export const Header: React.FC<HeaderProps> = ({ setView }) => {
               <p className="text-sm text-gray-500">Participatory Budgeting Platform</p>
             </div>
           </div>
-          <nav className="hidden md:flex space-x-6">
+          <nav className="hidden md:flex items-center space-x-4">
              <button
               onClick={() => setView('dashboard')}
-              className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className={navItemClasses('dashboard')}
             >
               Dashboard
+            </button>
+             <button
+              onClick={() => setView('budget-simulator')}
+              className={navItemClasses('budget-simulator')}
+            >
+              Budget Simulator
             </button>
             <button
               onClick={() => setView('submit')}

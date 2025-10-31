@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import type { OfficialProject, ProgressReport, ProjectStatus } from '../types';
 import { ReportCard } from './ReportCard';
-import { CalendarIcon, CheckCircleIcon, ClockIcon, CurrencyDollarIcon, ExclamationIcon, MapPinIcon, PlusCircleIcon, StalledIcon } from './icons';
+import { CalendarIcon, CheckCircleIcon, ClockIcon, CurrencyDollarIcon, ExclamationIcon, MapPinIcon, PlusCircleIcon, StalledIcon, UploadIcon } from './icons';
 
 interface ProjectDetailsProps {
   project: OfficialProject;
@@ -19,14 +18,21 @@ const statusInfo: Record<ProjectStatus, { icon: React.FC<React.SVGProps<SVGSVGEl
 export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onAddReport }) => {
   const [observation, setObservation] = useState('');
   const [status, setStatus] = useState<ProjectStatus>('In Progress');
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [showReportForm, setShowReportForm] = useState(false);
 
   const handleSubmitReport = (e: React.FormEvent) => {
     e.preventDefault();
     if (observation) {
-      onAddReport(project.id, { observation, status });
+      // In a real app, you'd upload the file and get a URL.
+      // Here, we'll just simulate it.
+      const mediaUrl = mediaFile ? 'https://picsum.photos/400/300' : undefined;
+      onAddReport(project.id, { observation, status, mediaUrl });
+      
+      // Reset form
       setObservation('');
       setStatus('In Progress');
+      setMediaFile(null);
       setShowReportForm(false);
     }
   };
@@ -73,15 +79,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onAddRe
         {showReportForm && (
             <div className="bg-gray-50 p-4 rounded-lg mb-6 border">
                 <form onSubmit={handleSubmitReport} className="space-y-4">
-                    <div>
-                        <label htmlFor="status" className="block text-sm font-medium text-gray-700">Project Status</label>
-                        <select id="status" value={status} onChange={e => setStatus(e.target.value as ProjectStatus)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md">
-                            <option>Not Started</option>
-                            <option>In Progress</option>
-                            <option>Completed</option>
-                            <option>Stalled</option>
-                        </select>
-                    </div>
                      <div>
                         <label htmlFor="observation" className="block text-sm font-medium text-gray-700">Your Observation</label>
                         <textarea
@@ -93,6 +90,34 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onAddRe
                             placeholder="What have you seen on the ground?"
                             required
                         />
+                    </div>
+                    <div>
+                        <label htmlFor="status" className="block text-sm font-medium text-gray-700">Current Project Status</label>
+                        <select id="status" value={status} onChange={e => setStatus(e.target.value as ProjectStatus)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md">
+                            <option>Not Started</option>
+                            <option>In Progress</option>
+                            <option>Completed</option>
+                            <option>Stalled</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700">Attach Photo (Optional)</label>
+                         <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                            <div className="space-y-1 text-center">
+                            <UploadIcon className="mx-auto h-12 w-12 text-gray-400"/>
+                            <div className="flex text-sm text-gray-600">
+                                <label
+                                htmlFor="file-upload"
+                                className="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500"
+                                >
+                                <span>Upload a file</span>
+                                <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={(e) => setMediaFile(e.target.files ? e.target.files[0] : null)} />
+                                </label>
+                                <p className="pl-1">or drag and drop</p>
+                            </div>
+                            <p className="text-xs text-gray-500">{mediaFile ? `Selected: ${mediaFile.name}` : 'PNG, JPG up to 10MB'}</p>
+                            </div>
+                        </div>
                     </div>
                      <div className="flex justify-end gap-2">
                         <button type="button" onClick={() => setShowReportForm(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>

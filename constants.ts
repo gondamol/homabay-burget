@@ -36,8 +36,8 @@ export const MOCK_OFFICIAL_PROJECTS: OfficialProject[] = [
     timeline: { start: '2024-06-01', end: '2025-01-31' },
     status: 'In Progress',
     reports: [
-      { id: 'rep-1-1', author: 'Citizen Jane', status: 'In Progress', observation: 'Work has started, but it seems slow. Heavy machinery is on site.', date: '2024-07-15T10:00:00Z', mediaUrl: 'https://picsum.photos/400/300' },
-      { id: 'rep-1-2', author: 'Local Shopkeeper', status: 'In Progress', observation: 'Drainage is being laid before the tarmac. This is good planning.', date: '2024-08-01T14:30:00Z' },
+      { id: 'rep-1-1', author: 'Citizen Jane', status: 'In Progress', observation: 'Work has started, but it seems slow. Heavy machinery is on site.', date: '2024-07-15T10:00:00Z', mediaUrl: 'https://picsum.photos/400/300', aiVerificationStatus: 'Verified' },
+      { id: 'rep-1-2', author: 'Local Shopkeeper', status: 'In Progress', observation: 'Drainage is being laid before the tarmac. This is good planning.', date: '2024-08-01T14:30:00Z', aiVerificationStatus: 'Pending' },
     ],
     subCounty: 'Homa Bay Town',
     ward: 'Homa Bay Central',
@@ -63,7 +63,7 @@ export const MOCK_OFFICIAL_PROJECTS: OfficialProject[] = [
     timeline: { start: '2024-05-15', end: '2024-11-30' },
     status: 'Completed',
     reports: [
-      { id: 'rep-3-1', author: 'Concerned Parent', status: 'Completed', observation: 'The classroom at our school is finished and looks great. The children are already using it.', date: '2024-11-20T09:00:00Z', mediaUrl: 'https://picsum.photos/400/300' },
+      { id: 'rep-3-1', author: 'Concerned Parent', status: 'Completed', observation: 'The classroom at our school is finished and looks great. The children are already using it.', date: '2024-11-20T09:00:00Z', mediaUrl: 'https://picsum.photos/400/300', aiVerificationStatus: 'Verified' },
     ],
   },
 ];

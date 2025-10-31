@@ -1,4 +1,4 @@
-export type View = 'landing' | 'dashboard' | 'submit' | 'project';
+export type View = 'landing' | 'dashboard' | 'submit' | 'project' | 'budget-simulator';
 
 export interface ProjectIdea {
   id: string;
@@ -12,6 +12,7 @@ export interface ProjectIdea {
 }
 
 export type ProjectStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Stalled';
+export type AIVerificationStatus = 'Verified' | 'Pending' | 'Rejected';
 
 export interface ProgressReport {
   id: string;
@@ -20,6 +21,7 @@ export interface ProgressReport {
   observation: string;
   mediaUrl?: string;
   date: string;
+  aiVerificationStatus?: AIVerificationStatus;
 }
 
 export interface OfficialProject {
@@ -43,6 +45,7 @@ export interface AIAnalysisResult {
     topic: string;
     count: number;
     description: string;
+    cost: number;
   }[];
   sentiment: {
     positive: number;
