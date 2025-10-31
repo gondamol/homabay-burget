@@ -1,14 +1,14 @@
-
 import React, { useState, useCallback } from 'react';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { SubmissionForm } from './components/SubmissionForm';
 import { ProjectDetails } from './components/ProjectDetails';
+import { LandingPage } from './components/LandingPage';
 import type { View, ProjectIdea, OfficialProject, ProgressReport } from './types';
 import { MOCK_PROJECT_IDEAS, MOCK_OFFICIAL_PROJECTS } from './constants';
 
 export default function App(): React.ReactElement {
-  const [view, setView] = useState<View>('dashboard');
+  const [view, setView] = useState<View>('landing');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   const [projectIdeas, setProjectIdeas] = useState<ProjectIdea[]>(MOCK_PROJECT_IDEAS);
@@ -50,6 +50,8 @@ export default function App(): React.ReactElement {
 
   const renderContent = useCallback(() => {
     switch (view) {
+      case 'landing':
+        return <LandingPage onNavigate={setView} />;
       case 'submit':
         return <SubmissionForm onSubmit={handleAddProjectIdea} />;
       case 'project':
@@ -71,8 +73,8 @@ export default function App(): React.ReactElement {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
-      <Header currentView={view} setView={setView} />
-      <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      {view !== 'landing' && <Header currentView={view} setView={setView} />}
+      <main className={view !== 'landing' ? "p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto" : ""}>
         {renderContent()}
       </main>
     </div>

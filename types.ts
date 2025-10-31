@@ -1,4 +1,4 @@
-export type View = 'dashboard' | 'submit' | 'project';
+export type View = 'landing' | 'dashboard' | 'submit' | 'project';
 
 export interface ProjectIdea {
   id: string;
