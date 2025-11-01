@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import type { View, ProjectIdea, OfficialProject, ProgressReport, ForumPost, Comment, ForumPostReply } from './types';
 import { MOCK_PROJECT_IDEAS, MOCK_OFFICIAL_PROJECTS } from './constants';
@@ -63,13 +62,14 @@ const App: React.FC = () => {
         setView('details');
     };
 
-    const handleSubmission = async (idea: Omit<ProjectIdea, 'id' | 'submittedVia' | 'votes' | 'comments'>) => {
+    const handleSubmission = async (idea: Omit<ProjectIdea, 'id' | 'submittedVia' | 'votes' | 'comments' | 'status'>) => {
         const newIdea: ProjectIdea = {
             ...idea,
             id: `idea-${Date.now()}`,
             submittedVia: 'web',
             votes: 1,
             comments: [],
+            status: 'Pending',
         };
         const response = await getConciergeResponse(newIdea, projectIdeas);
         setConciergeResponse(response);
@@ -155,6 +155,38 @@ const App: React.FC = () => {
         setChatbotGrounding(context);
     };
 
+    // Admin Handlers
+    const handleUpdateProjectIdeaStatus = (ideaId: string, status: ProjectIdea['status']) => {
+        setProjectIdeas(prev => prev.map(idea => 
+            idea.id === ideaId ? { ...idea, status } : idea
+        ));
+    };
+    
+    const handleConvertIdeaToProject = (idea: ProjectIdea) => {
+        const newOfficialProject: OfficialProject = {
+            id: `proj-${Date.now()}`,
+            name: idea.title,
+            description: idea.description,
+            budget: 0, // Admin needs to set this
+            location: idea.location,
+            subCounty: idea.subCounty,
+            ward: idea.ward,
+            category: idea.category,
+            timeline: { start: new Date().toISOString().split('T')[0], end: '' }, // Admin needs to set end date
+            status: 'Not Started',
+            reports: [],
+            forum: [],
+        };
+        setOfficialProjects(prev => [newOfficialProject, ...prev]);
+        handleUpdateProjectIdeaStatus(idea.id, 'Converted');
+        alert(`"${idea.title}" has been converted to an official project. You can now manage it in the Official Projects table.`);
+    };
+
+    const handleUpdateOfficialProject = (updatedProject: OfficialProject) => {
+        setOfficialProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+    };
+
+
     const renderContent = () => {
         if (view === 'details' && selectedProjectId) {
             const project = officialProjects.find(p => p.id === selectedProjectId);
@@ -176,7 +208,13 @@ const App: React.FC = () => {
             case 'submit':
                 return <SubmissionForm onSubmit={handleSubmission} />;
             case 'admin':
-                return <AdminDashboard projectIdeas={projectIdeas} officialProjects={officialProjects} />;
+                return <AdminDashboard 
+                            projectIdeas={projectIdeas} 
+                            officialProjects={officialProjects}
+                            onUpdateIdeaStatus={handleUpdateProjectIdeaStatus}
+                            onConvertIdea={handleConvertIdeaToProject}
+                            onUpdateProject={handleUpdateOfficialProject}
+                        />;
             case 'simulator':
                 return <BudgetSimulator projectIdeas={projectIdeas} budgetSubmissions={budgetSubmissions} onBudgetSubmit={handleBudgetSubmit} />;
             case 'landing':

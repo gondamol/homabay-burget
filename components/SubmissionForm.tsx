@@ -6,7 +6,7 @@ import { enhanceDescription } from '../services/geminiService';
 
 
 interface SubmissionFormProps {
-  onSubmit: (idea: Omit<ProjectIdea, 'id' | 'submittedVia' | 'votes' | 'comments'>) => void;
+  onSubmit: (idea: Omit<ProjectIdea, 'id' | 'submittedVia' | 'votes' | 'comments' | 'status'>) => void;
 }
 
 export const SubmissionForm: React.FC<SubmissionFormProps> = ({ onSubmit }) => {

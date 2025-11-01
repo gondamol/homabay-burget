@@ -1,4 +1,3 @@
-
 export type ProjectStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Stalled';
 
 export type AIVerificationStatus = 'Verified' | 'Pending' | 'Rejected';
@@ -24,6 +23,7 @@ export interface ProjectIdea {
   votes: number;
   comments: Comment[];
   isAnonymous?: boolean;
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Converted';
 }
 
 export interface ProgressReport {
