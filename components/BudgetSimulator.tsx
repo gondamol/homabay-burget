@@ -23,14 +23,17 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas }
       const top5 = result.topPriorities.slice(0, 5);
       setPriorities(top5);
       // Initialize allocations
-      const initialAllocations = top5.reduce((acc, p) => ({ ...acc, [p.topic]: 0 }), {});
+      // FIX: Explicitly type the initial value of reduce to prevent incorrect type inference.
+      const initialAllocations = top5.reduce((acc, p) => ({ ...acc, [p.topic]: 0 }), {} as Record<string, number>);
       setAllocations(initialAllocations);
       setLoading(false);
     };
     fetchPriorities();
   }, [projectIdeas]);
 
-  const totalAllocated = Object.values(allocations).reduce((sum, val) => sum + val, 0);
+  // Fix: Explicitly type the accumulator and value in the reduce function
+  // to prevent TypeScript from inferring them as 'unknown', which caused a type error on the following line.
+  const totalAllocated = Object.values(allocations).reduce((sum: number, val: number) => sum + val, 0);
   const remainingBudget = TOTAL_BUDGET - totalAllocated;
 
   const handleAllocationChange = (topic: string, value: string) => {
@@ -49,7 +52,7 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas }
 
   const chartData = priorities.map(p => ({
     name: p.topic,
-    "Allocated Budget": allocations[p.topic],
+    "Allocated Budget": allocations[p.topic] || 0,
   }));
 
   return (
@@ -72,7 +75,8 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas }
             {priorities.map(p => (
               <div key={p.topic}>
                 <label className="block text-sm font-semibold text-gray-700">{p.topic}</label>
-                <p className="text-xs text-gray-500 mb-1">Est. Cost/Project: {p.cost.toLocaleString('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 })}</p>
+                {/* FIX: Use Intl.NumberFormat for robust currency formatting to prevent errors with toLocaleString. */}
+                <p className="text-xs text-gray-500 mb-1">Est. Cost/Project: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(p.cost)}</p>
                 <input
                   type="range"
                   min="0"
@@ -83,7 +87,8 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas }
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                 />
                 <div className="text-right text-sm font-medium text-green-700 mt-1">
-                  { (allocations[p.topic] || 0).toLocaleString('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }) }
+                  {/* FIX: Use Intl.NumberFormat for robust currency formatting to prevent errors with toLocaleString. */}
+                  { new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(allocations[p.topic] || 0) }
                 </div>
               </div>
             ))}
@@ -96,15 +101,18 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas }
              <div className="space-y-2 text-lg">
                 <div className="flex justify-between">
                     <span className="text-gray-600">Total Budget:</span>
-                    <span className="font-semibold">{TOTAL_BUDGET.toLocaleString('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 })}</span>
+                    {/* FIX: Use Intl.NumberFormat for robust currency formatting to prevent errors with toLocaleString. */}
+                    <span className="font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(TOTAL_BUDGET)}</span>
                 </div>
                 <div className="flex justify-between">
                     <span className="text-gray-600">Total Allocated:</span>
-                    <span className="font-semibold">{totalAllocated.toLocaleString('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 })}</span>
+                    {/* FIX: Use Intl.NumberFormat for robust currency formatting to prevent errors with toLocaleString. */}
+                    <span className="font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(totalAllocated)}</span>
                 </div>
                 <div className={`flex justify-between border-t pt-2 ${remainingBudget < 0 ? 'text-red-600' : 'text-green-700'}`}>
                     <span className="font-bold">Remaining:</span>
-                    <span className="font-bold">{remainingBudget.toLocaleString('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 })}</span>
+                    {/* FIX: Use Intl.NumberFormat for robust currency formatting to prevent errors with toLocaleString. */}
+                    <span className="font-bold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(remainingBudget)}</span>
                 </div>
             </div>
              {remainingBudget < 0 && (
@@ -117,7 +125,8 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas }
                 <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                     <XAxis type="number" hide />
                     <YAxis type="category" dataKey="name" width={120} tick={{fontSize: 12}}/>
-                    <Tooltip formatter={(value: number) => value.toLocaleString('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 })}/>
+                    {/* Fix: The 'value' from the formatter can be of type 'unknown'. It must be cast to a number before being used with Intl.NumberFormat. */}
+                    <Tooltip formatter={(value: unknown) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(Number(value))}/>
                     <Bar dataKey="Allocated Budget" barSize={20}>
                       {chartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

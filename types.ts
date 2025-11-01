@@ -1,5 +1,12 @@
 export type View = 'landing' | 'dashboard' | 'submit' | 'project' | 'budget-simulator';
 
+export interface Comment {
+  id: string;
+  author: string;
+  text: string;
+  date: string;
+}
+
 export interface ProjectIdea {
   id: string;
   title: string;
@@ -9,6 +16,9 @@ export interface ProjectIdea {
   category?: string;
   subCounty?: string;
   ward?: string;
+  votes: number;
+  comments: Comment[];
+  isAnonymous?: boolean;
 }
 
 export type ProjectStatus = 'Not Started' | 'In Progress' | 'Completed' | 'Stalled';
@@ -37,6 +47,7 @@ export interface OfficialProject {
   status: ProjectStatus;
   reports: ProgressReport[];
   subCounty?: string;
+  category?: string;
   ward?: string;
 }
 

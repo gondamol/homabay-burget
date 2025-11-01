@@ -1,14 +1,8 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Chat } from "@google/genai";
 import type { ProjectIdea, AIAnalysisResult } from '../types';
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  // This is a fallback for development. In a real environment, the key should be set.
-  console.warn("Gemini API key not found. Using a placeholder. AI features will not work.");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
+// Fix: Per coding guidelines, initialize directly with process.env.API_KEY
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const analysisSchema = {
   type: Type.OBJECT,
@@ -64,7 +58,8 @@ const analysisSchema = {
 
 
 export const analyzeSubmissions = async (submissions: ProjectIdea[]): Promise<AIAnalysisResult> => {
-  if (!API_KEY) {
+  // Fix: Per coding guidelines, check process.env.API_KEY
+  if (!process.env.API_KEY) {
     // Return mock data if API key is not available
     return {
       topPriorities: [
@@ -133,7 +128,8 @@ export const getConciergeResponse = async (newIdea: ProjectIdea, allIdeas: Proje
         return newTitleWords.some(word => titleWords.has(word) && word.length > 3);
     }).length;
 
-    if (!API_KEY) {
+    // Fix: Per coding guidelines, check process.env.API_KEY
+    if (!process.env.API_KEY) {
       // Return mock response
        return `Thank you for your submission about "${newIdea.title}". We've received it and our team will review it. We found ${similarIdeas} other similar submission(s) from your fellow citizens. This helps us understand the priorities of the community. You can track the overall community priorities on the main dashboard.`;
     }
@@ -168,4 +164,58 @@ export const getConciergeResponse = async (newIdea: ProjectIdea, allIdeas: Proje
         console.error("Error generating concierge response:", error);
         return `Thank you for your submission about "${newIdea.title}". We have successfully received it. Your participation is valuable to us. Please check the public dashboard for updates on community priorities.`;
     }
-}
+};
+
+export const enhanceDescription = async (description: string): Promise<string> => {
+  if (!process.env.API_KEY) {
+    return `${description}\n\n[AI-ENHANCED CONTENT: This is a placeholder as the API key is not configured. The AI would normally expand on the benefits, scope, and potential impact of this project for the community.]`;
+  }
+
+  const prompt = `
+    You are a professional proposal writer for community projects.
+    A citizen has provided a brief description for a project idea.
+    Your task is to expand this description into a more detailed and compelling paragraph.
+    Elaborate on the potential benefits, the problem it solves, and the positive impact it could have on the community.
+    Do not add a title or any formatting. Return only the enhanced paragraph.
+
+    Citizen's description: "${description}"
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    return response.text;
+  } catch(error) {
+    console.error("Error enhancing description:", error);
+    return description; // Return original on error
+  }
+};
+
+let chat: Chat | null = null;
+
+export const getChatResponse = async (history: { role: string; parts: { text: string }[] }[], newMessage: string): Promise<string> => {
+  if (!process.env.API_KEY) {
+    return "Hello! I am the Homa Bay County AI Assistant. I can answer your questions about public projects and services. How can I help you today? (Demo mode - API key not configured)";
+  }
+  
+  if (!chat) {
+      chat = ai.chats.create({
+        model: 'gemini-2.5-flash',
+        config: {
+          systemInstruction: 'You are a friendly and helpful AI assistant for the Homa Bay County participatory budgeting platform. Your role is to answer citizen questions about the platform, ongoing projects, the budgeting process, and general information about the county. Be concise, helpful, and always polite.',
+        },
+        // The user's chat history.
+        history,
+      });
+  }
+
+  try {
+    const response = await chat.sendMessage({ message: newMessage });
+    return response.text;
+  } catch (error) {
+    console.error("Error getting chat response:", error);
+    return "I'm sorry, I encountered an error and cannot respond at the moment. Please try again later.";
+  }
+};

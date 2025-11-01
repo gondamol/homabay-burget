@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import type { ProjectIdea, OfficialProject, AIAnalysisResult } from '../types';
+import type { ProjectIdea, OfficialProject, AIAnalysisResult, ProjectStatus, Comment } from '../types';
 import { analyzeSubmissions } from '../services/geminiService';
 import { ProjectCard } from './ProjectCard';
-import { MapPinIcon, FaceSmileIcon, ChartBarIcon, FilterIcon, ClipboardDocumentListIcon, SearchIcon } from './icons';
-import { HOMA_BAY_LOCATIONS } from '../constants';
+import { ProjectIdeaCard } from './ProjectIdeaCard';
+import { MapPinIcon, FaceSmileIcon, ChartBarIcon, FilterIcon, ClipboardDocumentListIcon, SearchIcon, UserGroupIcon } from './icons';
+import { HOMA_BAY_LOCATIONS, PROJECT_STATUSES } from '../constants';
 
 interface DashboardProps {
   projectIdeas: ProjectIdea[];
   officialProjects: OfficialProject[];
   onSelectProject: (projectId: string) => void;
+  votedIdeas: Set<string>;
+  onVoteOnIdea: (ideaId: string) => void;
+  onAddComment: (ideaId: string, commentText: string) => void;
 }
 
 const PRIORITY_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -30,19 +34,38 @@ const calculateCompletionPercentage = (project: OfficialProject) => {
 };
 
 
-export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProjects, onSelectProject }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProjects, onSelectProject, votedIdeas, onVoteOnIdea, onAddComment }) => {
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedSubCounty, setSelectedSubCounty] = useState('all');
   const [selectedWard, setSelectedWard] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [ideaSort, setIdeaSort] = useState<'newest' | 'most-voted'>('most-voted');
 
   const availableWards = useMemo(() => {
-    if (selectedSubCounty === 'all' || !HOMA_BAY_LOCATIONS[selectedSubCounty as keyof typeof HOMA_BAY_LOCATIONS]) {
+    if (selectedSubCounty === 'all' || !Object.prototype.hasOwnProperty.call(HOMA_BAY_LOCATIONS, selectedSubCounty)) {
       return [];
     }
+    // We can be confident selectedSubCounty is a key now.
     return HOMA_BAY_LOCATIONS[selectedSubCounty as keyof typeof HOMA_BAY_LOCATIONS];
   }, [selectedSubCounty]);
+
+  const projectCategories = useMemo(() => {
+    const categories = new Set<string>();
+    projectIdeas.forEach(idea => {
+        if (idea.category) {
+            categories.add(idea.category);
+        }
+    });
+    officialProjects.forEach(project => {
+        if (project.category) {
+            categories.add(project.category);
+        }
+    });
+    return [...categories].sort();
+  }, [projectIdeas, officialProjects]);
 
   const filteredIdeas = useMemo(() => {
     return projectIdeas.filter(idea => {
@@ -52,6 +75,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProj
     });
   }, [projectIdeas, selectedSubCounty, selectedWard]);
 
+  const sortedAndFilteredIdeas = useMemo(() => {
+    const ideas = [...filteredIdeas];
+    if (ideaSort === 'most-voted') {
+      ideas.sort((a, b) => b.votes - a.votes);
+    } else { // 'newest'
+      ideas.sort((a, b) => b.id.localeCompare(a.id));
+    }
+    return ideas;
+  }, [filteredIdeas, ideaSort]);
+
   const filteredProjects = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     return officialProjects.filter(project => {
@@ -60,14 +93,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProj
       const wardMatch = selectedWard === 'all' || project.ward === selectedWard;
       const locationMatch = project.location === 'County-wide' || (subCountyMatch && wardMatch);
       
+      // Category filter
+      const categoryMatch = selectedCategory === 'all' || project.category === selectedCategory;
+
+      // Status filter
+      const statusMatch = selectedStatus === 'all' || project.status === selectedStatus;
+
       // Search filter
       const searchMatch = query === '' ||
                           project.name.toLowerCase().includes(query) ||
                           project.description.toLowerCase().includes(query);
 
-      return locationMatch && searchMatch;
+      return locationMatch && categoryMatch && searchMatch && statusMatch;
     });
-  }, [officialProjects, selectedSubCounty, selectedWard, searchQuery]);
+  }, [officialProjects, selectedSubCounty, selectedWard, searchQuery, selectedCategory, selectedStatus]);
   
   const ongoingProjects = useMemo(() => {
     // Note: ongoingProjects should also respect the search query if desired,
@@ -130,7 +169,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProj
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition"
             >
                 <option value="all">All Sub-Counties</option>
-                {Object.keys(HOMA_BAY_LOCATIONS).map(sc => <option key={sc} value={sc}>{sc}</option>)}
+                {Object.keys(HOMA_BAY_LOCATIONS).sort().map(sc => <option key={sc} value={sc}>{sc}</option>)}
             </select>
             <select
                 value={selectedWard}
@@ -257,22 +296,85 @@ export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProj
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+        <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                <UserGroupIcon className="h-6 w-6 mr-2 text-green-600" />
+                Community Project Ideas
+            </h2>
+            <select
+                value={ideaSort}
+                onChange={(e) => setIdeaSort(e.target.value as 'newest' | 'most-voted')}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition text-sm"
+                aria-label="Sort project ideas"
+            >
+                <option value="most-voted">Sort by Most Voted</option>
+                <option value="newest">Sort by Newest</option>
+            </select>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedAndFilteredIdeas.map(idea => (
+                <ProjectIdeaCard 
+                    key={idea.id} 
+                    idea={idea} 
+                    onVote={onVoteOnIdea} 
+                    hasVoted={votedIdeas.has(idea.id)} 
+                    onAddComment={onAddComment}
+                />
+            ))}
+        </div>
+        {sortedAndFilteredIdeas.length === 0 && !loading && (
+          <div className="bg-white p-8 rounded-lg shadow-md text-center mt-6">
+            <h3 className="text-lg font-semibold text-gray-700">No community ideas match your filter criteria.</h3>
+            <p className="text-gray-500 mt-2">Try adjusting the location filters above.</p>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 my-4 flex items-center">
           <MapPinIcon className="h-6 w-6 mr-2 text-green-600" />
           Funded & Official Projects
         </h2>
 
-        <div className="mb-6 relative">
-            <input
-                type="text"
-                placeholder="Search projects by name or keyword..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition"
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-gray-400" />
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative md:col-span-1">
+                <input
+                    type="text"
+                    placeholder="Search projects..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition"
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <SearchIcon className="h-5 w-5 text-gray-400" />
+                </div>
             </div>
+            <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition"
+                aria-label="Filter by project category"
+            >
+                <option value="all">All Categories</option>
+                {projectCategories.map(cat => (
+                    <option key={cat} value={cat}>
+                        {cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase()}
+                    </option>
+                ))}
+            </select>
+            <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition"
+                aria-label="Filter by project status"
+            >
+                <option value="all">All Statuses</option>
+                {PROJECT_STATUSES.map(status => (
+                    <option key={status} value={status}>
+                        {status}
+                    </option>
+                ))}
+            </select>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
