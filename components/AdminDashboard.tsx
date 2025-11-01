@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import type { ProjectIdea, OfficialProject } from '../types';
-import { DocumentChartBarIcon, LightBulbIcon } from './icons';
+import { DocumentChartBarIcon, LightBulbIcon, PlusCircleIcon } from './icons';
 import { DataExport } from './DataExport';
 import { ManageProjectModal } from './ManageProjectModal';
 import { ReviewIdeaModal } from './ReviewIdeaModal';
+import { AddProjectModal } from './AddProjectModal';
 
 
 interface AdminDashboardProps {
@@ -12,6 +13,7 @@ interface AdminDashboardProps {
   onUpdateIdeaStatus: (ideaId: string, status: ProjectIdea['status']) => void;
   onConvertIdea: (idea: ProjectIdea) => void;
   onUpdateProject: (project: OfficialProject) => void;
+  onAddNewProject: (project: Omit<OfficialProject, 'id' | 'reports' | 'forum'>) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
@@ -20,9 +22,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onUpdateIdeaStatus,
     onConvertIdea,
     onUpdateProject,
+    onAddNewProject,
 }) => {
     const [reviewingIdea, setReviewingIdea] = useState<ProjectIdea | null>(null);
     const [managingProject, setManagingProject] = useState<OfficialProject | null>(null);
+    const [isAddingProject, setIsAddingProject] = useState(false);
 
   const statusColorMap: Record<ProjectIdea['status'], string> = {
     Pending: 'bg-yellow-100 text-yellow-800',
@@ -75,10 +79,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </div>
       
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <DocumentChartBarIcon className="h-6 w-6 mr-2 text-green-700"/>
-            Official Projects ({officialProjects.length})
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                <DocumentChartBarIcon className="h-6 w-6 mr-2 text-green-700"/>
+                Official Projects ({officialProjects.length})
+            </h2>
+            <button 
+                onClick={() => setIsAddingProject(true)} 
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                <PlusCircleIcon className="h-5 w-5 mr-2" />
+                Add New Project
+            </button>
+        </div>
         <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -118,6 +130,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             onClose={() => setManagingProject(null)}
             onSave={onUpdateProject}
           />
+      )}
+       {isAddingProject && (
+        <AddProjectModal 
+            onClose={() => setIsAddingProject(false)}
+            onSave={onAddNewProject}
+        />
       )}
     </div>
   );

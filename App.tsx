@@ -186,6 +186,16 @@ const App: React.FC = () => {
         setOfficialProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
     };
 
+    const handleAddNewOfficialProject = (projectData: Omit<OfficialProject, 'id' | 'reports' | 'forum'>) => {
+        const newProject: OfficialProject = {
+            ...projectData,
+            id: `proj-${Date.now()}`,
+            reports: [],
+            forum: [],
+        };
+        setOfficialProjects(prev => [newProject, ...prev]);
+    };
+
 
     const renderContent = () => {
         if (view === 'details' && selectedProjectId) {
@@ -214,6 +224,7 @@ const App: React.FC = () => {
                             onUpdateIdeaStatus={handleUpdateProjectIdeaStatus}
                             onConvertIdea={handleConvertIdeaToProject}
                             onUpdateProject={handleUpdateOfficialProject}
+                            onAddNewProject={handleAddNewOfficialProject}
                         />;
             case 'simulator':
                 return <BudgetSimulator projectIdeas={projectIdeas} budgetSubmissions={budgetSubmissions} onBudgetSubmit={handleBudgetSubmit} />;
