@@ -1,4 +1,4 @@
-import type { ProjectIdea, OfficialProject, ProjectStatus, CountyDocument } from './types';
+import type { ProjectIdea, OfficialProject, ProjectStatus, CountyDocument, OfficialBudgetAllocation } from './types';
 
 export const HOMA_BAY_LOCATIONS = {
     "Kasipul": ["West Kasipul", "South Kasipul", "Central Kasipul", "East Kasipul"],
@@ -128,4 +128,12 @@ export const MOCK_DOCUMENTS: CountyDocument[] = [
         - Water and Environment: KES 300 Million for drilling new boreholes and protecting the Gwassi Hills forest.
         `
     }
+];
+
+export const MOCK_OFFICIAL_BUDGET: OfficialBudgetAllocation[] = [
+    { category: 'Roads & Infrastructure', amount: 150000000 },
+    { category: 'Healthcare', amount: 120000000 },
+    { category: 'Education', amount: 90000000 },
+    { category: 'Agriculture', amount: 80000000 },
+    { category: 'Water Access', amount: 60000000 },
 ];

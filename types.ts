@@ -50,7 +50,7 @@ export interface ForumPost {
 }
 
 export interface OfficialProject {
-  id: string;
+  id:string;
   name: string;
   description: string;
   budget: number;
@@ -87,4 +87,9 @@ export interface CountyDocument {
     title: string;
     description: string;
     content: string;
+}
+
+export interface OfficialBudgetAllocation {
+    category: string;
+    amount: number;
 }

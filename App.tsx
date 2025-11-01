@@ -12,6 +12,7 @@ import { MOCK_PROJECT_IDEAS, MOCK_OFFICIAL_PROJECTS } from './constants';
 import { getConciergeResponse } from './services/geminiService';
 
 const PROJECT_IDEAS_STORAGE_KEY = 'homa-bay-project-ideas';
+const BUDGET_SUBMISSIONS_STORAGE_KEY = 'homa-bay-budget-submissions';
 
 export default function App(): React.ReactElement {
   const [view, setView] = useState<View>('landing');
@@ -29,6 +30,16 @@ export default function App(): React.ReactElement {
     }
   });
 
+  const [budgetSubmissions, setBudgetSubmissions] = useState<Record<string, number>[]>(() => {
+    try {
+      const storedSubmissions = window.localStorage.getItem(BUDGET_SUBMISSIONS_STORAGE_KEY);
+      return storedSubmissions ? JSON.parse(storedSubmissions) : [];
+    } catch (error) {
+      console.error("Error reading budget submissions from localStorage", error);
+      return [];
+    }
+  });
+
   const [officialProjects, setOfficialProjects] = useState<OfficialProject[]>(MOCK_OFFICIAL_PROJECTS);
   const [votedIdeas, setVotedIdeas] = useState<Set<string>>(new Set());
 
@@ -39,6 +50,15 @@ export default function App(): React.ReactElement {
       console.error("Error saving project ideas to localStorage", error);
     }
   }, [projectIdeas]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(BUDGET_SUBMISSIONS_STORAGE_KEY, JSON.stringify(budgetSubmissions));
+    } catch (error) {
+      console.error("Error saving budget submissions to localStorage", error);
+    }
+  }, [budgetSubmissions]);
+
 
   const handleAddProjectIdea = async (idea: Omit<ProjectIdea, 'id' | 'submittedVia' | 'votes' | 'comments'>) => {
     const newIdea: ProjectIdea = {
@@ -54,6 +74,10 @@ export default function App(): React.ReactElement {
     setConciergeResponse(response);
 
     setProjectIdeas(prevIdeas => [newIdea, ...prevIdeas]);
+  };
+
+  const handleBudgetSubmission = (allocation: Record<string, number>) => {
+    setBudgetSubmissions(prev => [...prev, allocation]);
   };
   
   const handleAddComment = (ideaId: string, commentText: string) => {
@@ -177,7 +201,11 @@ export default function App(): React.ReactElement {
         setView('dashboard'); // Fallback if project not found
         return null;
       case 'budget-simulator':
-        return <BudgetSimulator projectIdeas={projectIdeas} />;
+        return <BudgetSimulator 
+                projectIdeas={projectIdeas} 
+                budgetSubmissions={budgetSubmissions}
+                onBudgetSubmit={handleBudgetSubmission}
+               />;
       case 'dashboard':
       default:
         return <Dashboard 
@@ -190,7 +218,7 @@ export default function App(): React.ReactElement {
           onSetChatbotGrounding={setChatbotGrounding}
         />;
     }
-  }, [view, projectIdeas, officialProjects, selectedProject, votedIdeas]);
+  }, [view, projectIdeas, officialProjects, selectedProject, votedIdeas, budgetSubmissions]);
 
 
   return (
