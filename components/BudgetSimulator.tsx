@@ -69,10 +69,7 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas, 
 
       for (const sub of budgetSubmissions) {
           for (const [category, amount] of Object.entries(sub)) {
-              // FIX: Fix arithmetic error by ensuring amount is a number before addition.
-              // When values come from localStorage, they might not be typed correctly as numbers.
-              // This was causing string concatenation instead of addition, leading to errors
-              // in subsequent calculations (e.g., division).
+              // Fix: Explicitly convert `amount` to a number to prevent runtime errors from string concatenation.
               totals[category] = (totals[category] || 0) + Number(amount);
               counts[category] = (counts[category] || 0) + 1;
           }
@@ -178,8 +175,7 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas, 
                       type="range"
                       min="0"
                       max={TOTAL_BUDGET}
-                      // FIX: The `p.cost` from the AI analysis might be a string.
-                      // Explicitly convert it to a Number to ensure the 'step' attribute is valid.
+                      // Fix: The `step` attribute requires a number. `p.cost` from the API could be a string.
                       step={Number(p.cost) || 100000}
                       value={allocations[p.topic] || 0}
                       onChange={(e) => handleAllocationChange(p.topic, e.target.value)}

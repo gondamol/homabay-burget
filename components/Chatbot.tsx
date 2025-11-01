@@ -1,62 +1,49 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getChatResponse } from '../services/geminiService';
 import { ChatBubbleIcon, PaperAirplaneIcon, XMarkIcon, DocumentTextIcon } from './icons';
+import type { Message } from '../types';
 
-interface Message {
-  role: 'user' | 'model';
-  parts: { text: string }[];
-}
 
 interface ChatbotProps {
     groundingContext: {title: string, content: string} | null;
     onClearGrounding: () => void;
+    history: Message[];
+    setHistory: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
 
-export const Chatbot: React.FC<ChatbotProps> = ({ groundingContext, onClearGrounding }) => {
+export const Chatbot: React.FC<ChatbotProps> = ({ groundingContext, onClearGrounding, history, setHistory }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const groundingRef = useRef(groundingContext);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(scrollToBottom, [messages]);
-  
-  // Reset chat history if grounding context changes
-  useEffect(() => {
-    if (groundingContext !== groundingRef.current) {
-        setMessages([]);
-        groundingRef.current = groundingContext;
-    }
-  }, [groundingContext]);
+  useEffect(scrollToBottom, [history]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: 'user', parts: [{ text: input }] };
-    setMessages(prev => [...prev, userMessage]);
+    setHistory(prev => [...prev, userMessage]);
+
+    const apiHistory = [...history]; 
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      const chatHistory = messages.map(msg => ({
-          role: msg.role,
-          parts: msg.parts,
-      }));
-      const responseText = await getChatResponse(chatHistory, input, groundingContext?.content || null);
+      const responseText = await getChatResponse(apiHistory, currentInput, groundingContext?.content || null);
       const modelMessage: Message = { role: 'model', parts: [{ text: responseText }] };
-      setMessages(prev => [...prev, modelMessage]);
+      setHistory(prev => [...prev, modelMessage]);
     } catch (error) {
       console.error('Chatbot error:', error);
       const errorMessage: Message = { role: 'model', parts: [{ text: "Sorry, I'm having trouble connecting. Please try again later." }] };
-      setMessages(prev => [...prev, errorMessage]);
+      setHistory(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +80,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ groundingContext, onClearGroun
       )}
       <div className="flex-1 p-4 overflow-y-auto bg-gray-100">
         <div className="space-y-4">
-          {messages.map((msg, index) => (
+          {history.map((msg, index) => (
             <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-2xl ${msg.role === 'user' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-800'}`}>
                 <p className="text-sm">{msg.parts[0].text}</p>

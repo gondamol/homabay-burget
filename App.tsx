@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { View, ProjectIdea, OfficialProject, ProgressReport, ForumPost, Comment, ForumPostReply } from './types';
+import type { View, ProjectIdea, OfficialProject, ProgressReport, ForumPost, Comment, ForumPostReply, Message } from './types';
 import { MOCK_PROJECT_IDEAS, MOCK_OFFICIAL_PROJECTS } from './constants';
 import { getConciergeResponse } from './services/geminiService';
 import { Header } from './components/Header';
@@ -34,6 +34,10 @@ const App: React.FC = () => {
         const savedSubmissions = localStorage.getItem('budgetSubmissions');
         return savedSubmissions ? JSON.parse(savedSubmissions) : [];
     });
+    const [chatHistory, setChatHistory] = useState<Message[]>(() => {
+        const savedHistory = localStorage.getItem('chatHistory');
+        return savedHistory ? JSON.parse(savedHistory) : [];
+    });
 
     useEffect(() => {
         localStorage.setItem('projectIdeas', JSON.stringify(projectIdeas));
@@ -50,6 +54,10 @@ const App: React.FC = () => {
     useEffect(() => {
         localStorage.setItem('budgetSubmissions', JSON.stringify(budgetSubmissions));
     }, [budgetSubmissions]);
+
+    useEffect(() => {
+        localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+    }, [chatHistory]);
 
 
     const handleNavigate = (newView: View) => {
@@ -153,6 +161,12 @@ const App: React.FC = () => {
     
     const handleSetChatbotGrounding = (context: {title: string, content: string} | null) => {
         setChatbotGrounding(context);
+        setChatHistory([]); // Clear history when context changes
+    };
+
+    const handleClearGrounding = () => {
+        setChatbotGrounding(null);
+        setChatHistory([]); // Clear history when context is cleared
     };
 
     // Admin Handlers
@@ -241,7 +255,12 @@ const App: React.FC = () => {
                 {renderContent()}
             </main>
             {conciergeResponse && <AIConciergeModal response={conciergeResponse} onClose={handleCloseConcierge} />}
-            <Chatbot groundingContext={chatbotGrounding} onClearGrounding={() => setChatbotGrounding(null)}/>
+            <Chatbot 
+                groundingContext={chatbotGrounding} 
+                onClearGrounding={handleClearGrounding}
+                history={chatHistory}
+                setHistory={setChatHistory}
+            />
         </div>
     );
 };

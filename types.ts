@@ -91,6 +91,11 @@ export interface AIAnalysisResult {
     };
 }
 
+export interface Message {
+  role: 'user' | 'model';
+  parts: { text: string }[];
+}
+
 export interface CountyDocument {
     id: string;
     title: string;
