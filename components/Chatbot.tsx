@@ -1,24 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getChatResponse } from '../services/geminiService';
-import { ChatBubbleIcon, PaperAirplaneIcon, XMarkIcon } from './icons';
+import { ChatBubbleIcon, PaperAirplaneIcon, XMarkIcon, DocumentTextIcon } from './icons';
 
 interface Message {
   role: 'user' | 'model';
   parts: { text: string }[];
 }
 
-export const Chatbot: React.FC = () => {
+interface ChatbotProps {
+    groundingContext: {title: string, content: string} | null;
+    onClearGrounding: () => void;
+}
+
+
+export const Chatbot: React.FC<ChatbotProps> = ({ groundingContext, onClearGrounding }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const groundingRef = useRef(groundingContext);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(scrollToBottom, [messages]);
+  
+  // Reset chat history if grounding context changes
+  useEffect(() => {
+    if (groundingContext !== groundingRef.current) {
+        setMessages([]);
+        groundingRef.current = groundingContext;
+    }
+  }, [groundingContext]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +50,7 @@ export const Chatbot: React.FC = () => {
           role: msg.role,
           parts: msg.parts,
       }));
-      const responseText = await getChatResponse(chatHistory, input);
+      const responseText = await getChatResponse(chatHistory, input, groundingContext?.content || null);
       const modelMessage: Message = { role: 'model', parts: [{ text: responseText }] };
       setMessages(prev => [...prev, modelMessage]);
     } catch (error) {
@@ -66,6 +82,15 @@ export const Chatbot: React.FC = () => {
             <XMarkIcon className="h-6 w-6" />
         </button>
       </header>
+       {groundingContext && (
+        <div className="p-2 bg-green-50 text-green-800 text-xs text-center border-b flex items-center justify-between">
+           <div className="flex items-center">
+             <DocumentTextIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+             <span>Asking about: <strong>{groundingContext.title}</strong></span>
+           </div>
+            <button onClick={onClearGrounding} className="font-bold text-xs hover:underline pr-1">Clear</button>
+        </div>
+      )}
       <div className="flex-1 p-4 overflow-y-auto bg-gray-100">
         <div className="space-y-4">
           {messages.map((msg, index) => (

@@ -194,17 +194,35 @@ export const enhanceDescription = async (description: string): Promise<string> =
 };
 
 let chat: Chat | null = null;
+let lastGroundingContext: string | null = null;
 
-export const getChatResponse = async (history: { role: string; parts: { text: string }[] }[], newMessage: string): Promise<string> => {
+export const getChatResponse = async (
+    history: { role: string; parts: { text: string }[] }[], 
+    newMessage: string,
+    groundingContext: string | null
+): Promise<string> => {
   if (!process.env.API_KEY) {
+    if (groundingContext) {
+      return "I am ready to answer questions about the selected document, but the AI is in demo mode (API key not configured).";
+    }
     return "Hello! I am the Homa Bay County AI Assistant. I can answer your questions about public projects and services. How can I help you today? (Demo mode - API key not configured)";
   }
   
+  // If context has changed, reset the chat
+  if(groundingContext !== lastGroundingContext) {
+    chat = null;
+    lastGroundingContext = groundingContext;
+  }
+
   if (!chat) {
+      const systemInstruction = groundingContext
+        ? `You are an AI assistant for Homa Bay County. Your task is to answer citizen questions based *only* on the document provided below. Do not use any external knowledge. If the answer is not in the document, say "That information is not available in this document." Be polite and concise. DOCUMENT CONTENT: """${groundingContext}"""`
+        : 'You are a friendly and helpful AI assistant for the Homa Bay County participatory budgeting platform. Your role is to answer citizen questions about the platform, ongoing projects, the budgeting process, and general information about the county. Be concise, helpful, and always polite.';
+
       chat = ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {
-          systemInstruction: 'You are a friendly and helpful AI assistant for the Homa Bay County participatory budgeting platform. Your role is to answer citizen questions about the platform, ongoing projects, the budgeting process, and general information about the county. Be concise, helpful, and always polite.',
+          systemInstruction,
         },
         // The user's chat history.
         history,
@@ -216,6 +234,7 @@ export const getChatResponse = async (history: { role: string; parts: { text: st
     return response.text;
   } catch (error) {
     console.error("Error getting chat response:", error);
+    chat = null; // Reset chat on error
     return "I'm sorry, I encountered an error and cannot respond at the moment. Please try again later.";
   }
 };

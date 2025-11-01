@@ -1,4 +1,4 @@
-import type { ProjectIdea, OfficialProject, ProjectStatus } from './types';
+import type { ProjectIdea, OfficialProject, ProjectStatus, CountyDocument } from './types';
 
 export const HOMA_BAY_LOCATIONS = {
     "Kasipul": ["West Kasipul", "South Kasipul", "Central Kasipul", "East Kasipul"],
@@ -46,6 +46,23 @@ export const MOCK_OFFICIAL_PROJECTS: OfficialProject[] = [
     subCounty: 'Homa Bay Town',
     ward: 'Homa Bay Central',
     category: 'ROADS',
+    implementer: {
+      companyName: 'Bay Area Constructors Ltd.',
+      tenderValue: 72500000,
+      directors: ['John Okello', 'Mary Atieno'],
+    },
+    forum: [
+        {
+            id: 'forum-1-1',
+            author: 'Concerned Boda Boda Rider',
+            title: 'Why is the project moving so slowly?',
+            body: 'The timeline says this should be almost halfway done, but they have only completed a small section. This is causing major traffic disruptions for us.',
+            date: '2024-09-05T11:00:00Z',
+            replies: [
+                { id: 'reply-1-1-1', author: 'Resident', text: 'I agree. The dust is also a major problem for our businesses along the road.', date: '2024-09-05T14:00:00Z'}
+            ],
+        }
+    ]
   },
   {
     id: 'proj-2',
@@ -59,6 +76,12 @@ export const MOCK_OFFICIAL_PROJECTS: OfficialProject[] = [
     subCounty: 'Karachuonyo',
     ward: 'Kendu Bay Town',
     category: 'INFRASTRUCTURE',
+    implementer: {
+      companyName: 'Nyanza Quality Builders',
+      tenderValue: 43800000,
+      directors: ['Peter Omollo', 'Esther Achieng', 'David Onyango'],
+    },
+    forum: []
   },
   {
     id: 'proj-3',
@@ -73,4 +96,36 @@ export const MOCK_OFFICIAL_PROJECTS: OfficialProject[] = [
     ],
     category: 'EDUCATION',
   },
+];
+
+export const MOCK_DOCUMENTS: CountyDocument[] = [
+    {
+        id: 'doc-1',
+        title: 'CIDP 2023-2027',
+        description: 'The County Integrated Development Plan outlines the strategic priorities for Homa Bay over the next five years, focusing on key sectors for growth and development.',
+        content: `
+        The Homa Bay County Integrated Development Plan (CIDP) for 2023-2027 is a comprehensive five-year strategy.
+        Key strategic pillars include:
+        1. Agricultural Transformation: Focus on increasing food security through modern farming techniques, subsidies for farmers, and improving market access for fish and crop traders. Budget allocation is 25% of the development fund.
+        2. Healthcare Strengthening: Upgrade health facilities from Level 2 to Level 3, equip major hospitals with modern diagnostic tools, and hire more healthcare workers. Budget allocation is 20%.
+        3. Infrastructure Development: Tarmacking 200km of county roads, expanding clean water access to 70% of households, and improving sanitation infrastructure. Budget allocation is 30%.
+        4. Education and Youth Empowerment: Build new ECDE centers, equip vocational training centers, and provide bursaries for needy students. Budget allocation is 15%.
+        5. Environmental Conservation: Protect water towers, promote afforestation, and implement sustainable waste management policies. Budget allocation is 10%.
+        `
+    },
+    {
+        id: 'doc-2',
+        title: 'Annual Budget 2024',
+        description: 'The approved budget for the 2024 fiscal year, detailing allocations for various departments and flagship projects across the county.',
+        content: `
+        The Homa Bay County Annual Budget for the 2024 fiscal year totals KES 8.5 Billion.
+        It is divided into Recurrent Expenditure (KES 5.5 Billion) and Development Expenditure (KES 3 Billion).
+        Key allocations for Development are:
+        - Roads and Infrastructure: KES 900 Million, with flagship projects including the Homa Bay Town Ring Road and the Kendu Bay Pier rehabilitation.
+        - Health Services: KES 600 Million, allocated for the completion of the new maternity wing at the County Referral Hospital and upgrading of 10 dispensaries.
+        - Agriculture and Fisheries: KES 750 Million, with KES 200 million for fertilizer subsidies and KES 150 million for fish cage farming initiatives.
+        - Education: KES 450 Million, primarily for ECDE infrastructure and secondary school bursaries.
+        - Water and Environment: KES 300 Million for drilling new boreholes and protecting the Gwassi Hills forest.
+        `
+    }
 ];

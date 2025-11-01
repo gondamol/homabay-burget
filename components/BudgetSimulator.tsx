@@ -31,8 +31,8 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas }
     fetchPriorities();
   }, [projectIdeas]);
 
-  // Fix: Explicitly type the accumulator and value in the reduce function
-  // to prevent TypeScript from inferring them as 'unknown', which caused a type error on the following line.
+  // FIX: Explicitly type the accumulator and value in the reduce function
+  // to prevent TypeScript from inferring their types as 'any', which could cause a type error.
   const totalAllocated = Object.values(allocations).reduce((sum: number, val: number) => sum + val, 0);
   const remainingBudget = TOTAL_BUDGET - totalAllocated;
 
@@ -125,7 +125,7 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas }
                 <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                     <XAxis type="number" hide />
                     <YAxis type="category" dataKey="name" width={120} tick={{fontSize: 12}}/>
-                    {/* Fix: The 'value' from the formatter can be of type 'unknown'. It must be cast to a number before being used with Intl.NumberFormat. */}
+                    {/* FIX: The 'value' from the formatter can be of type 'unknown'. It must be cast to a number before being used with Intl.NumberFormat. */}
                     <Tooltip formatter={(value: unknown) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(Number(value))}/>
                     <Bar dataKey="Allocated Budget" barSize={20}>
                       {chartData.map((entry, index) => (

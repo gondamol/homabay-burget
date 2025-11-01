@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import type { ProjectIdea, OfficialProject, AIAnalysisResult, ProjectStatus, Comment } from '../types';
+import type { ProjectIdea, OfficialProject, AIAnalysisResult, ProjectStatus, Comment, CountyDocument } from '../types';
 import { analyzeSubmissions } from '../services/geminiService';
 import { ProjectCard } from './ProjectCard';
 import { ProjectIdeaCard } from './ProjectIdeaCard';
-import { MapPinIcon, FaceSmileIcon, ChartBarIcon, FilterIcon, ClipboardDocumentListIcon, SearchIcon, UserGroupIcon } from './icons';
-import { HOMA_BAY_LOCATIONS, PROJECT_STATUSES } from '../constants';
+import { MapPinIcon, FaceSmileIcon, ChartBarIcon, FilterIcon, ClipboardDocumentListIcon, SearchIcon, UserGroupIcon, DocumentDuplicateIcon } from './icons';
+import { HOMA_BAY_LOCATIONS, PROJECT_STATUSES, MOCK_DOCUMENTS } from '../constants';
 
 interface DashboardProps {
   projectIdeas: ProjectIdea[];
@@ -14,6 +14,7 @@ interface DashboardProps {
   votedIdeas: Set<string>;
   onVoteOnIdea: (ideaId: string) => void;
   onAddComment: (ideaId: string, commentText: string) => void;
+  onSetChatbotGrounding: (context: {title: string, content: string} | null) => void;
 }
 
 const PRIORITY_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -34,7 +35,7 @@ const calculateCompletionPercentage = (project: OfficialProject) => {
 };
 
 
-export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProjects, onSelectProject, votedIdeas, onVoteOnIdea, onAddComment }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProjects, onSelectProject, votedIdeas, onVoteOnIdea, onAddComment, onSetChatbotGrounding }) => {
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedSubCounty, setSelectedSubCounty] = useState('all');
@@ -292,6 +293,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ projectIdeas, officialProj
                     <p className="text-gray-500 mt-2">Try adjusting the filters or be the first to submit an idea for this area!</p>
                 </div>
             )}
+        </div>
+      </div>
+
+       <div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <DocumentDuplicateIcon className="h-6 w-6 mr-2 text-green-600" />
+            County Documents
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {MOCK_DOCUMENTS.map(doc => (
+            <div key={doc.id} className="bg-white p-5 rounded-lg shadow-md">
+              <h3 className="font-bold text-gray-800">{doc.title}</h3>
+              <p className="text-sm text-gray-600 mt-1">{doc.description}</p>
+              <button
+                onClick={() => {
+                    onSetChatbotGrounding({title: doc.title, content: doc.content});
+                    alert(`The AI assistant is now focused on the ${doc.title}. Open the chat to ask questions!`);
+                }}
+                className="mt-4 text-sm font-semibold text-green-700 hover:text-green-800 transition-colors"
+              >
+                Ask AI about this Document &rarr;
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

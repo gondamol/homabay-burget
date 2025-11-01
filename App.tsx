@@ -7,7 +7,7 @@ import { LandingPage } from './components/LandingPage';
 import { BudgetSimulator } from './components/BudgetSimulator';
 import { AIConciergeModal } from './components/AIConciergeModal';
 import { Chatbot } from './components/Chatbot';
-import type { View, ProjectIdea, OfficialProject, ProgressReport, Comment } from './types';
+import type { View, ProjectIdea, OfficialProject, ProgressReport, Comment, ForumPost } from './types';
 import { MOCK_PROJECT_IDEAS, MOCK_OFFICIAL_PROJECTS } from './constants';
 import { getConciergeResponse } from './services/geminiService';
 
@@ -17,6 +17,7 @@ export default function App(): React.ReactElement {
   const [view, setView] = useState<View>('landing');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [conciergeResponse, setConciergeResponse] = useState<string | null>(null);
+  const [chatbotGrounding, setChatbotGrounding] = useState<{title: string, content: string} | null>(null);
 
   const [projectIdeas, setProjectIdeas] = useState<ProjectIdea[]>(() => {
     try {
@@ -72,6 +73,50 @@ export default function App(): React.ReactElement {
     );
   };
 
+  const handleAddForumPost = (projectId: string, post: Omit<ForumPost, 'id' | 'author' | 'date' | 'replies'>) => {
+     setOfficialProjects(prevProjects =>
+      prevProjects.map(p => {
+        if (p.id === projectId) {
+          const newPost: ForumPost = {
+            id: `post-${Date.now()}`,
+            author: 'Accountable Citizen',
+            date: new Date().toISOString(),
+            replies: [],
+            ...post,
+          };
+          const existingForum = p.forum || [];
+          return { ...p, forum: [newPost, ...existingForum] };
+        }
+        return p;
+      })
+    );
+  };
+
+  const handleAddForumReply = (projectId: string, postId: string, replyText: string) => {
+    const newReply: Comment = {
+        id: `reply-${Date.now()}`,
+        author: 'Citizen',
+        text: replyText,
+        date: new Date().toISOString(),
+    };
+
+     setOfficialProjects(prevProjects =>
+      prevProjects.map(p => {
+        if (p.id === projectId) {
+            const updatedForum = (p.forum || []).map(post => {
+                if (post.id === postId) {
+                    return { ...post, replies: [...post.replies, newReply] };
+                }
+                return post;
+            });
+            return { ...p, forum: updatedForum };
+        }
+        return p;
+      })
+    );
+  };
+
+
   const handleCloseConcierge = () => {
     setConciergeResponse(null);
     setView('dashboard');
@@ -122,7 +167,12 @@ export default function App(): React.ReactElement {
         return <SubmissionForm onSubmit={handleAddProjectIdea} />;
       case 'project':
         if (selectedProject) {
-          return <ProjectDetails project={selectedProject} onAddReport={handleAddProgressReport} />;
+          return <ProjectDetails 
+                    project={selectedProject} 
+                    onAddReport={handleAddProgressReport} 
+                    onAddForumPost={handleAddForumPost}
+                    onAddForumReply={handleAddForumReply}
+                />;
         }
         setView('dashboard'); // Fallback if project not found
         return null;
@@ -137,6 +187,7 @@ export default function App(): React.ReactElement {
           votedIdeas={votedIdeas}
           onVoteOnIdea={handleVoteOnIdea}
           onAddComment={handleAddComment}
+          onSetChatbotGrounding={setChatbotGrounding}
         />;
     }
   }, [view, projectIdeas, officialProjects, selectedProject, votedIdeas]);
@@ -149,7 +200,7 @@ export default function App(): React.ReactElement {
         {renderContent()}
       </main>
       {conciergeResponse && <AIConciergeModal response={conciergeResponse} onClose={handleCloseConcierge} />}
-      {view !== 'landing' && <Chatbot />}
+      {view !== 'landing' && <Chatbot groundingContext={chatbotGrounding} onClearGrounding={() => setChatbotGrounding(null)} />}
     </div>
   );
 }

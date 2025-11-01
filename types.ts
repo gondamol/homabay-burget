@@ -34,6 +34,21 @@ export interface ProgressReport {
   aiVerificationStatus?: AIVerificationStatus;
 }
 
+export interface Contractor {
+  companyName: string;
+  tenderValue: number;
+  directors: string[];
+}
+
+export interface ForumPost {
+  id: string;
+  author: string;
+  title: string;
+  body: string;
+  date: string;
+  replies: Comment[];
+}
+
 export interface OfficialProject {
   id: string;
   name: string;
@@ -49,6 +64,8 @@ export interface OfficialProject {
   subCounty?: string;
   category?: string;
   ward?: string;
+  implementer?: Contractor;
+  forum?: ForumPost[];
 }
 
 export interface AIAnalysisResult {
@@ -63,4 +80,11 @@ export interface AIAnalysisResult {
     neutral: number;
     negative: number;
   };
+}
+
+export interface CountyDocument {
+    id: string;
+    title: string;
+    description: string;
+    content: string;
 }
