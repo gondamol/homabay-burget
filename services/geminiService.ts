@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import type { ProjectIdea, AIAnalysisResult } from '../types';
 
@@ -58,6 +59,21 @@ const analysisSchema = {
 
 
 export const analyzeSubmissions = async (submissions: ProjectIdea[]): Promise<AIAnalysisResult> => {
+  // 1. Check Cache
+  // Create a simple cache key based on the number of items and the ID of the most recent item (assuming list is sorted or prepended)
+  // If the list is empty, key is 'empty'. If not, we use the length + first item ID as a fingerprint.
+  const cacheKey = `homa_bay_analysis_cache_${submissions.length}_${submissions[0]?.id || 'empty'}`;
+  
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as AIAnalysisResult;
+    }
+  } catch (e) {
+    console.warn("Failed to read from cache", e);
+  }
+
+  // 2. API Key Check
   // Fix: Per coding guidelines, check process.env.API_KEY
   if (!process.env.API_KEY) {
     // Return mock data if API key is not available
@@ -99,10 +115,16 @@ export const analyzeSubmissions = async (submissions: ProjectIdea[]): Promise<AI
     });
 
     const jsonString = response.text.trim();
-    const result = JSON.parse(jsonString);
+    const result = JSON.parse(jsonString) as AIAnalysisResult;
     
     if (result.topPriorities && result.sentiment) {
-      return result as AIAnalysisResult;
+        // 3. Save to Cache
+        try {
+            localStorage.setItem(cacheKey, JSON.stringify(result));
+        } catch (e) {
+            console.warn("Failed to save to cache (likely quota exceeded)", e);
+        }
+        return result;
     } else {
         throw new Error("Invalid JSON structure from Gemini API");
     }

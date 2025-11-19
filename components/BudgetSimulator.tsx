@@ -58,7 +58,8 @@ export const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({ projectIdeas, 
     fetchPriorities();
   }, [projectIdeas]);
 
-  const totalAllocated = useMemo(() => Object.values(allocations).reduce((sum, val) => sum + val, 0), [allocations]);
+  // Fix: Explicitly cast Object.values return type to number[] to avoid TS error
+  const totalAllocated = useMemo(() => (Object.values(allocations) as number[]).reduce((sum, val) => sum + val, 0), [allocations]);
   const remainingBudget = TOTAL_BUDGET - totalAllocated;
 
   const peoplesBudget = useMemo(() => {

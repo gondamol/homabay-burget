@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import type { View, ProjectIdea, OfficialProject, ProgressReport, ForumPost, Comment, ForumPostReply, Message } from './types';
 import { MOCK_PROJECT_IDEAS, MOCK_OFFICIAL_PROJECTS } from './constants';
@@ -243,6 +244,7 @@ const App: React.FC = () => {
             case 'simulator':
                 return <BudgetSimulator projectIdeas={projectIdeas} budgetSubmissions={budgetSubmissions} onBudgetSubmit={handleBudgetSubmit} />;
             case 'landing':
+                return <LandingPage onNavigate={handleNavigate} />;
             default:
                 return <LandingPage onNavigate={handleNavigate} />;
         }
@@ -251,9 +253,13 @@ const App: React.FC = () => {
     return (
         <div className="bg-gray-50 min-h-screen font-sans">
             {view !== 'landing' && <Header onNavigate={handleNavigate} currentView={view} />}
-            <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {renderContent()}
-            </main>
+            {view === 'landing' ? (
+                renderContent()
+            ) : (
+                <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    {renderContent()}
+                </main>
+            )}
             {conciergeResponse && <AIConciergeModal response={conciergeResponse} onClose={handleCloseConcierge} />}
             <Chatbot 
                 groundingContext={chatbotGrounding} 
